@@ -2,19 +2,34 @@
   <div class="loginWrap">
     <div class="box">
       <div class="hehda">
-       <img src="@/assets/logo_index.png" alt="">
+        <img src="@/assets/logo_index.png" alt>
       </div>
-      <el-form ref="form" :model="form" class="loginForm">
-        <el-form-item>
+      <el-form ref="form" :model="form" class="loginForm" :rules="rules">
+        <el-form-item prop="mobile">
           <el-input v-model="form.mobile" placeholder="请输入手机号"></el-input>
         </el-form-item>
-        <el-form-item>
+
+        <el-form-item prop="code">
           <el-input v-model="form.code" placeholder="请输入验证码" class="xingxing"></el-input>
-           <el-button  @click='fn2' class="hehehe">获取验证码</el-button>
+          <!-- <el-button @click="fn2" class="hehehe">获取验证码</el-button> -->
+          <el-button
+            @click="fn2"
+            :disabled="!!codeTime"
+            class="hehehe"
+          >{{codeTime ? `剩余${codeTimeD}秒` : '获取验证码'}}</el-button>
         </el-form-item>
-        
-        <el-form-item>
-          <el-button type="primary" @click="onSubmit" class="wwwww" >登录</el-button>
+
+        <el-form-item prop="cal">
+          <el-checkbox v-model="form.cal" class="bufu">
+            我以
+            <a href="javascript:;" style="color:red">阅读</a>
+            并
+            <a href="javascript:;" style="color:red">同意</a>
+          </el-checkbox>
+        </el-form-item>
+
+        <el-form-item class="heheeheh">
+          <el-button type="primary" @click.prevent="onSubmit" class="wwwww">登录</el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -22,35 +37,144 @@
 </template>
 
 <script>
-import axios from  'axios'
+const cunChu = 60;
+import axios from "axios";
+import "@/vender/gt";
+import { createHash } from "crypto";
+import { clearInterval } from "timers";
 export default {
   name: "AppLogin",
   data() {
     return {
       form: {
         mobile: "",
-        code: ""
-      }
+        code: "",
+        cal: ""
+      },
+      rules: {
+        mobile: [
+          { required: true, message: "请输入手机号", trigger: "blur" },
+          // { len:11, message: '长度必须11位', trigger: 'blur' },
+          { pattern: /\d{11}/, message: "长度必须11位", trigger: "blur" }
+        ],
+        code: [
+          { required: true, message: "请输入验证码", trigger: "blur" },
+          // { len:11, message: '长度必须6位', trigger: 'blur' },
+          { pattern: /\d{6}/, message: "长度必须是6位", trigger: "blur" }
+        ],
+        cal: [
+          { required: true, message:"请阅读并同意"},
+          { pattern: /true/, message:"请阅读并同意"}
+        ]
+      },
+      codeTime: null, //倒计时定时器
+      codeTimeD: cunChu //倒计时时间
     };
   },
   // 确定
   methods: {
     onSubmit() {
-      console.log("submit!");
+      this.$refs["form"].validate((valid) => {
+        if (!valid) {
+          return;
+        }
+        this.queding();
+      });
+    },
+
+    //确定提交函数封装
+    queding() {
+      axios({
+        method: "POST",
+        url: "http://ttapi.research.itcast.cn/mp/v1_0/authorizations",
+        data: this.form
+      }).then((res) => {
+         const userInfo = res.data.data
+         window.localStorage.setItem('urse_info',JSON.stringify(userInfo))
+          this.$message({
+            message: "登陆成功",
+            type: "success"
+          })
+          this.$router.push({
+            name: "home"
+          })
+        }).catch(e => {
+          this.$message.error("登陆失败");
+        });
     },
     //验证码
     fn2() {
-      const { mobile } = this.form
-     axios({
-       method:'GET',
-       url:`http://ttapi.research.itcast.cn/mp/v1_0/captchas/${mobile}`
-     }).then(res => {
-       console.log(res.data)
-     })
+      this.$refs["form"].validateField("mobile", errorMessage => {
+        if (errorMessage) {
+          return;
+        }
+        this.yanZheng();
+      });
+    },
+    //验证封装
+    yanZheng() {
+      const { mobile } = this.form;
+      axios({
+        method: "GET",
+        url: `http://ttapi.research.itcast.cn/mp/v1_0/captchas/${mobile}`
+      }).then(res => {
+        const { data } = res.data;
+        window.initGeetest(
+          {
+            gt: data.gt,
+            challenge: data.challenge,
+            offline: !data.success,
+            new_captcha: data.new_captcha,
+            product: "bind"
+          },
+          (captchaObj) => {
+            captchaObj
+              .onReady(() => {
+                //验证码ready之后才能调用verify方法显示验证码
+                captchaObj.verify(); //弹出验证码框
+              })
+              .onSuccess(() => {
+                const {
+                  geetest_challenge: challenge,
+                  geetest_seccode: seccode,
+                  geetest_validate: validate
+                } = captchaObj.getValidate();
+                axios({
+                  methos: "GET",
+                  url: `http://ttapi.research.itcast.cn/mp/v1_0/sms/codes/${mobile}`,
+                  params: {
+                    challenge,
+                    validate,
+                    seccode
+                  }
+                }).then(res => {
+                  this.daoJi();
+                });
+              })
+              .onError(function() {
+                //your code
+              });
+          }
+        );
+      });
+    },
+
+    // 倒计时
+    daoJi() {
+      this.codeTime = window.setInterval(() => {
+        this.codeTimeD--;
+        if (this.codeTimeD <= 0) {
+          window.clearInterval(this.codeTime);
+          this.codeTimeD = 5;
+          this.codeTime = null;
+        }
+      }, 1000);
     }
   }
 };
 </script>
+
+
 
 <style lang = 'less' scoped>
 .loginWrap {
@@ -67,7 +191,7 @@ export default {
 }
 .box {
   width: 500px;
-  height: 300px;
+  height: 1;
   background: #fff;
 }
 .hehda img {
@@ -78,6 +202,9 @@ export default {
   margin-top: 20px;
   margin-bottom: 20px;
 }
+/* .bufu {
+ display: none
+} */
 .xingxing {
   width: 66%;
 }
@@ -87,6 +214,7 @@ export default {
 }
 .wwwww {
   width: 100%;
+  margin-bottom: -20px;
 }
 </style>
 
