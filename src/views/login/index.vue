@@ -42,6 +42,7 @@ import axios from "axios";
 import "@/vender/gt";
 import { createHash } from "crypto";
 import { clearInterval } from "timers";
+import { saveUser }  from '@/utils/auth'
 export default {
   name: "AppLogin",
   data() {
@@ -86,11 +87,11 @@ export default {
     queding() {
       axios({
         method: "POST",
-        url: "http://ttapi.research.itcast.cn/mp/v1_0/authorizations",
+        url: "http://toutiao.course.itcast.cn/mp/v1_0/authorizations",
         data: this.form
       }).then((res) => {
          const userInfo = res.data.data
-         window.localStorage.setItem('urse_info',JSON.stringify(userInfo))
+         saveUser(userInfo)
           this.$message({
             message: "登陆成功",
             type: "success"
@@ -116,7 +117,7 @@ export default {
       const { mobile } = this.form;
       axios({
         method: "GET",
-        url: `http://ttapi.research.itcast.cn/mp/v1_0/captchas/${mobile}`
+        url: `http://toutiao.course.itcast.cn/v1_0/captchas/${mobile}`
       }).then(res => {
         const { data } = res.data;
         window.initGeetest(
@@ -141,7 +142,7 @@ export default {
                 } = captchaObj.getValidate();
                 axios({
                   methos: "GET",
-                  url: `http://ttapi.research.itcast.cn/mp/v1_0/sms/codes/${mobile}`,
+                  url: `http://toutiao.course.itcast.cn/sms/codes/${mobile}`,
                   params: {
                     challenge,
                     validate,
@@ -165,7 +166,7 @@ export default {
         this.codeTimeD--;
         if (this.codeTimeD <= 0) {
           window.clearInterval(this.codeTime);
-          this.codeTimeD = 5;
+          this.codeTimeD =cunChu ;
           this.codeTime = null;
         }
       }, 1000);

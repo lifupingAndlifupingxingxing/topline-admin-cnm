@@ -1,13 +1,13 @@
 <template>
   <el-menu
     default-active="2"
-    @open="handleOpen"
-    @close="handleClose"
     background-color="#545c64"
     text-color="#fff"
     active-text-color="#ffd04b"
     :router='true'
   >
+  <!-- @open="handleOpen"
+    @close="handleClose" -->
     <el-menu-item index="/">
       <i class="el-icon-menu"></i>
       <span slot="title">首页</span>
@@ -75,14 +75,14 @@ export default {
   data() {
     return {};
   },
-  // method: {
-  //   handleOpen(key, keyPath) {
-  //     console.log(key, keyPath);
-  //   },
-  //   handleClose(key, keyPath) {
-  //     console.log(key, keyPath);
-  //   }
-  // }
+  method: {
+    handleOpen(key, keyPath) {
+      console.log(key, keyPath);
+    },
+    handleClose(key, keyPath) {
+      console.log(key, keyPath);
+    }
+  }
 };
 </script>
 

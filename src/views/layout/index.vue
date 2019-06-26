@@ -44,6 +44,12 @@ export default {
   background: rgb(61, 63, 63);
   line-height: 60px;
 }
+img {
+   margin-top: 10px;
+}
+.imagess {
+  margin-top: 30px;
+}
 .el-main {
   background: blue;
 }
